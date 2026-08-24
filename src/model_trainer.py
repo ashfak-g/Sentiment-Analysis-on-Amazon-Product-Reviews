@@ -37,7 +37,7 @@ class ModelTrainer:
         name = model_name.lower()
         
         if name == "logistic_regression":
-            params = {"max_iter": 1000, "random_state": 42, "C": 1.0}
+            params = {"max_iter": 1000, "random_state": 42, "C": 1.0, "class_weight": "balanced"}
             params.update(kwargs)
             return LogisticRegression(**params)
             

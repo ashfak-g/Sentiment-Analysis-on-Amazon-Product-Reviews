@@ -19,8 +19,7 @@ class HyperparameterTuner:
             "alpha": [0.1, 0.5, 1.0, 2.0]
         },
         "svm": {
-            "C": [0.1, 1.0, 10.0],
-            "kernel": ["linear", "rbf"]
+            "C": [0.1, 1.0, 10.0]
         },
         "random_forest": {
             "n_estimators": [50, 100, 200],
