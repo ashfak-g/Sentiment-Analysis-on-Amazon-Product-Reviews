@@ -28,5 +28,7 @@ jobs:
         python -c "import nltk; nltk.download('stopwords'); nltk.download('wordnet'); nltk.download('omw-1.4'); nltk.download('punkt')"
 
     - name: Run Pytest
+      env:
+        PYTHONPATH: .
       run: |
-        pytest tests/
+        python -m pytest tests/
