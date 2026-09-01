@@ -48,6 +48,15 @@ class FeatureExtractor:
         """Transforms documents into feature matrix using fitted vectorizer."""
         return self.vectorizer.transform(raw_documents)
 
+    def get_feature_names_out(self) -> np.ndarray:
+        """Delegates feature names retrieval to underlying vectorizer."""
+        return self.vectorizer.get_feature_names_out()
+
+    @property
+    def vocabulary_(self) -> dict:
+        """Delegates vocabulary retrieval to underlying vectorizer."""
+        return self.vectorizer.vocabulary_
+
     def save(self, filepath: str) -> str:
         """Saves fitted vectorizer artifact."""
         return save_artifact(self.vectorizer, filepath)
