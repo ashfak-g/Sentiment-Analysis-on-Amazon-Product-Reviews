@@ -43,3 +43,10 @@ def test_explain_text_prediction(trained_components):
     assert "token_contributions" in explanation
     assert len(explanation["token_contributions"]) > 0
     assert "intercept" in explanation
+
+def test_plot_top_features(trained_components, tmp_path):
+    vectorizer, model, _ = trained_components
+    explainer = ModelExplainability(vectorizer, model)
+    save_file = str(tmp_path / "plot.png")
+    fig = explainer.plot_top_features(top_n=2, save_path=save_file)
+    assert fig is not None

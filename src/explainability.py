@@ -3,9 +3,12 @@ Model Explainability & Feature Importance Analysis Module.
 Extracts top positive and negative word coefficients and explains individual review predictions.
 """
 
+import os
 from typing import Dict, Any, Tuple, List
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Headless backend for CI/CD server compatibility
 import matplotlib.pyplot as plt
 import seaborn as sns
 from src.utils import logger, ensure_directories
@@ -103,7 +106,9 @@ class ModelExplainability:
             x="coefficient",
             y="feature",
             data=df_combined,
+            hue="feature",
             palette=colors,
+            legend=False,
             ax=ax
         )
         
