@@ -24,7 +24,7 @@ class ModelExplainability:
         
         # Extract coefficients for linear models (Logistic Regression, LinearSVC)
         if hasattr(self.model, "coef_"):
-            self.coefs = self.model.coef_[0]
+            self.coefs = np.ravel(self.model.coef_)
         else:
             raise ValueError("Model does not have 'coef_' attribute. Model explainability currently supports linear models.")
 
@@ -32,10 +32,13 @@ class ModelExplainability:
         """
         Returns top N positive and top N negative features with their weight coefficients.
         """
+        num_features = len(self.coefs)
+        n = min(top_n, max(1, num_features // 2)) if num_features > 0 else top_n
+        
         sorted_indices = np.argsort(self.coefs)
         
-        top_neg_indices = sorted_indices[:top_n]
-        top_pos_indices = sorted_indices[-top_n:][::-1]
+        top_neg_indices = sorted_indices[:n]
+        top_pos_indices = sorted_indices[-n:][::-1]
         
         df_pos = pd.DataFrame({
             "feature": self.feature_names[top_pos_indices],
@@ -49,7 +52,7 @@ class ModelExplainability:
             "impact": "Negative"
         })
         
-        logger.info(f"Extracted Top {top_n} positive and negative features.")
+        logger.info(f"Extracted Top {len(df_pos)} positive and negative features.")
         return df_pos, df_neg
 
     def explain_text_prediction(self, preprocessor: Any, text: str) -> Dict[str, Any]:
@@ -61,7 +64,7 @@ class ModelExplainability:
         vocab = self.vectorizer.vocabulary_
         
         token_contributions = []
-        intercept = float(self.model.intercept_[0]) if hasattr(self.model, "intercept_") else 0.0
+        intercept = float(np.ravel(self.model.intercept_)[0]) if hasattr(self.model, "intercept_") else 0.0
         
         total_score = intercept
         for token in tokens:
@@ -112,7 +115,7 @@ class ModelExplainability:
             ax=ax
         )
         
-        ax.set_title(f"Top {top_n} Positive and Negative Sentiment Features", fontsize=14, fontweight="bold")
+        ax.set_title(f"Top {len(df_pos)} Positive and Negative Sentiment Features", fontsize=14, fontweight="bold")
         ax.set_xlabel("TF-IDF Model Coefficient (Impact Weight)", fontsize=12)
         ax.set_ylabel("Word / N-Gram Feature", fontsize=12)
         ax.axvline(0, color="black", linestyle="--", linewidth=0.8)

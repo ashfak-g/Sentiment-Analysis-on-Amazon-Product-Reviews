@@ -6,6 +6,8 @@ Computes evaluation metrics and generates visualization plots.
 from typing import Dict, Any, Tuple
 import numpy as np
 import pandas as pd
+import matplotlib
+matplotlib.use('Agg')  # Headless backend for CI/CD server compatibility
 import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.metrics import (
