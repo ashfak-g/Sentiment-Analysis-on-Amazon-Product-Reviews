@@ -3,6 +3,7 @@ Feature extraction module for Amazon Product Review Sentiment Analysis.
 """
 
 from typing import Tuple, Any
+import numpy as np
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from src.utils import logger, save_artifact, load_artifact
 
