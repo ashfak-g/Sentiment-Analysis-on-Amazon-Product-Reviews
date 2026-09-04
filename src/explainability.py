@@ -128,3 +128,24 @@ class ModelExplainability:
             logger.info(f"Saved feature importance plot to {save_path}")
             
         return fig
+
+    @staticmethod
+    def generate_wordcloud(text_content: str, background_color: str = "white", colormap: str = "viridis") -> plt.Figure:
+        """
+        Generates a WordCloud matplotlib figure from raw or cleaned text string.
+        """
+        from wordcloud import WordCloud
+        
+        wc = WordCloud(
+            width=800,
+            height=400,
+            background_color=background_color,
+            colormap=colormap,
+            max_words=100
+        ).generate(text_content)
+        
+        fig, ax = plt.subplots(figsize=(10, 5))
+        ax.imshow(wc, interpolation="bilinear")
+        ax.axis("off")
+        plt.tight_layout()
+        return fig

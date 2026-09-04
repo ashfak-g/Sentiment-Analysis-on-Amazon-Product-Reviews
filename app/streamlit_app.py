@@ -1,6 +1,6 @@
 """
 Streamlit Web Application for Amazon Product Review Sentiment Analysis.
-Provides interactive single review analysis, batch CSV processing, and model benchmarks.
+Provides interactive single review analysis, feature importance explainability, WordClouds, batch CSV processing, and model benchmarks.
 """
 
 import os
@@ -14,11 +14,13 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from src.utils import load_artifact, load_json
 from src.text_preprocessor import TextPreprocessor
+from src.explainability import ModelExplainability
 
 MODEL_PATH = "models/best_model.joblib"
 VECTORIZER_PATH = "models/tfidf_vectorizer.joblib"
 PREPROCESSOR_PATH = "models/preprocessor.joblib"
 METADATA_PATH = "models/model_metadata.json"
+TRAIN_DATA_PATH = "data/processed/train.csv"
 
 st.set_page_config(
     page_title="Amazon Review Sentiment Analyzer",
@@ -45,7 +47,12 @@ st.sidebar.image("https://upload.wikimedia.org/wikipedia/commons/a/a9/Amazon_log
 st.sidebar.title("Navigation")
 page = st.sidebar.radio(
     "Select Feature", 
-    ["🔍 Live Sentiment Analyzer", "📁 Batch CSV Analyzer", "📊 Model Metrics & Insights"]
+    [
+        "🔍 Live Sentiment Analyzer",
+        "💡 Model Explainability & WordCloud",
+        "📁 Batch CSV Analyzer",
+        "📊 Model Metrics & Insights"
+    ]
 )
 
 st.sidebar.markdown("---")
@@ -117,7 +124,78 @@ if page == "🔍 Live Sentiment Analyzer":
                     st.text_area("Cleaned & Lemmatized Tokens:", value=cleaned, height=90, disabled=True)
                     st.caption(f"Word count: {len(user_review.split())} words → {len(cleaned.split())} processed tokens")
 
-# --- PAGE 2: Batch CSV Analyzer ---
+# --- PAGE 2: Model Explainability & WordCloud ---
+elif page == "💡 Model Explainability & WordCloud":
+    st.subheader("Model Explainability & Visual Insights")
+    st.markdown("Understand which words drive sentiment predictions and explore visual word importance.")
+    
+    tab1, tab2, tab3 = st.tabs([
+        "📊 Top Sentiment Features",
+        "🔍 Interactive Token Explainer",
+        "☁️ WordCloud Visualizer"
+    ])
+    
+    # Initialize Explainer
+    try:
+        explainer = ModelExplainability(vectorizer, model)
+    except Exception as e:
+        st.error(f"Could not initialize explainability module: {e}")
+        st.stop()
+        
+    with tab1:
+        st.markdown("#### Global TF-IDF Feature Importance")
+        top_n = st.slider("Select number of top features to view:", min_value=5, max_value=30, value=15)
+        
+        fig = explainer.plot_top_features(top_n=top_n)
+        st.pyplot(fig)
+        
+        c1, c2 = st.columns(2)
+        df_pos, df_neg = explainer.get_top_features(top_n=top_n)
+        
+        with c1:
+            st.markdown("🟢 **Top Positive Indicators**")
+            st.dataframe(df_pos[["feature", "coefficient"]], use_container_width=True)
+            
+        with c2:
+            st.markdown("🔴 **Top Negative Indicators**")
+            st.dataframe(df_neg[["feature", "coefficient"]], use_container_width=True)
+            
+    with tab2:
+        st.markdown("#### Local Token Contribution Breakdown")
+        test_text = st.text_input(
+            "Enter text to break down token weights:",
+            value="Terrible quality. Broke after three days of normal use. Highly disappointed."
+        )
+        
+        if test_text:
+            exp_dict = explainer.explain_text_prediction(preprocessor, test_text)
+            st.markdown(f"**Linear Intercept:** `{exp_dict['intercept']:.4f}` | **Total Linear Logit:** `{exp_dict['total_linear_score']:.4f}`")
+            
+            token_df = pd.DataFrame(exp_dict["token_contributions"])
+            st.dataframe(token_df, use_container_width=True)
+            
+    with tab3:
+        st.markdown("#### Sentiment WordClouds")
+        if os.path.exists(TRAIN_DATA_PATH):
+            train_df = pd.read_csv(TRAIN_DATA_PATH)
+            pos_text = " ".join(train_df[train_df["Positive"] == 1]["reviewText"].dropna().astype(str))
+            neg_text = " ".join(train_df[train_df["Positive"] == 0]["reviewText"].dropna().astype(str))
+            
+            wc_col1, wc_col2 = st.columns(2)
+            
+            with wc_col1:
+                st.markdown("🟢 **Positive Reviews WordCloud**")
+                fig_pos = ModelExplainability.generate_wordcloud(pos_text, background_color="white", colormap="Greens")
+                st.pyplot(fig_pos)
+                
+            with wc_col2:
+                st.markdown("🔴 **Negative Reviews WordCloud**")
+                fig_neg = ModelExplainability.generate_wordcloud(neg_text, background_color="white", colormap="Reds")
+                st.pyplot(fig_neg)
+        else:
+            st.info("Training dataset not found at `data/processed/train.csv` for WordCloud generation.")
+
+# --- PAGE 3: Batch CSV Analyzer ---
 elif page == "📁 Batch CSV Analyzer":
     st.subheader("Batch Review Processing")
     st.markdown("Upload a CSV file containing a column named `reviewText` or select a column for bulk inference.")
@@ -163,7 +241,7 @@ elif page == "📁 Batch CSV Analyzer":
         except Exception as e:
             st.error(f"Error reading CSV file: {e}")
 
-# --- PAGE 3: Model Metrics & Insights ---
+# --- PAGE 4: Model Metrics & Insights ---
 elif page == "📊 Model Metrics & Insights":
     st.subheader("Model Performance & Production Metrics")
     
